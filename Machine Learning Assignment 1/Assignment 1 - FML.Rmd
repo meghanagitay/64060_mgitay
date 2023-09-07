@@ -1,0 +1,50 @@
+---
+title: "Machine Learning Assignment 1"
+author: "Meghana Gitay"
+date: "2023-09-07"
+output: pdf_document
+---
+
+
+```{r}
+summary(cars)
+```
+```{r}
+
+library(readr)
+```
+```{r}
+bitcoin <- read.csv( "C:/Users/gitay/Downloads/dataset.csv")
+#mean median mode can be calculated by using summary on given variables
+summary(bitcoin)
+View(bitcoin)
+summary(bitcoin$total_capacity)
+```
+by the given data plot has been created
+```{r}
+plot(bitcoin$added)
+plot(bitcoin$total_capacity)
+```
+```{r}
+plot(bitcoin$added,bitcoin$total_capacity)
+```
+mean is used to calculate average 
+```{r}
+mean(bitcoin$added)
+mean(bitcoin$total_capacity)
+```
+median can be used to find out mid value
+```{r}
+median(bitcoin$added)
+median(bitcoin$total_capacity)
+```
+sd can be used to calculate standard deviation
+```{r}
+sd(bitcoin$added)
+sd(bitcoin$channel_count)
+```
+log can be used to calculate the log transformation in the given variables
+```{r}
+log(bitcoin$added,bitcoin$total_capacity)
+```
+
