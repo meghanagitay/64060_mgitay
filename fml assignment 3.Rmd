@@ -1,0 +1,256 @@
+---
+title: "fml assignment 3"
+author: "Meghana Gitay"
+date: "2023-10-15"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+#For the purpose of making an initial prediction without additional information, we take the baseline probabilities into account. Since we are interested in predicting whether an accident will result in an injury, we must calculate the total proportion of accidents with injury (Yes) and accidents without injury (No). The initial prediction should be based upon this baseline probability.
+#We took the first 24 records we had in the dataset and analyzed them. We looked at the response variable “inJURY” and two predictors: weather conditions and traffic control. We made a pivot table to look at the relationship between the two variables and how they relate to each other. The table shows the number of different combinations of values and helps us figure out what the conditional probabilities are.
+#The Bayes conditional probabilities for an injury were calculated based on the six different combinations of the two predictors “WEATHER_R” and “TRAF”. These probabilities were calculated by hand using the numbers from the pivot table. INJURY = “Yes”.
+#We ran a Naive Bayes Classifier on the same set of 24 records, using the same two predictors “WEATHER_R” and “TAFF_CON_R.” The model output gave us the probabilities and classifications of each record. We compared the results to see if the classifications were the same, and if the ranking of observations was the same.
+#The analysis was expanded to the entire dataset. The data was partitioned into a training set (60%) and a validation set (40%).
+#A Naive Bayes classifier was run on the complete training set, using the relevant predictors with "INJURY" as the response variable.
+#A confusion matrix was generated to evaluate the model's performance.
+#To get an idea of how accurate the model is, we calculated the total error for the validation set. The error is the percentage of cases that were incorrectly classified in the validation data set. Basically, the goal of the analysis was to predict accident severity based on Naive Bayes classifications. We looked at what the initial predictions were, what the conditional probabilities were, and how the model performed on both a small part of the data set and the whole dataset. The results give us an idea of how well the model is performing and how well it can classify accidents based on things like weather and traffic control.
+
+
+```{r}
+#QUESTION1
+##Our goal here is to predict whether an accident just reported will involve an injury (MAX_SEV_IR = 1 or 2) or will not (MAX_SEV_IR = 0). 
+##For this purpose, create a dummy variable called INJURY that takes the value “yes” if MAX_SEV_IR = 1 or 2, and otherwise “no.”
+#Load the accidentsFull.csv and install/load any required packages. Create and insert a dummy variable called “INJURY” in the data.
+
+library(readr)
+library(dplyr)
+accidentsFull<- read_csv("C:/Users/gitay/Downloads/accidentsFull.csv")
+View(accidentsFull)
+accidentsFull$INJURY <- ifelse(accidentsFull$MAX_SEV_IR>0, "yes", "no")
+head(accidentsFull)
+```
+
+```{r}
+#QUESTION2
+#Using the information in this dataset, if an accident has just been reported and no further information is available, what should the prediction be? (INJURY = Yes or No?) Why?
+#CREATING A TABLE BASED ON INJURY.
+injury.table <- table(accidentsFull$INJURY)
+show(injury.table)
+
+#cALUCATING THE PROBABILITY OF THE INJURY 
+injury.probablilty =  scales::percent(injury.table["yes"]/(injury.table["yes"]+injury.table["no"]),0.01)
+injury.probablilty
+##Since ~51% of the accidents in our data set resulted in an accident, we should predict that an accident will result in injury because it is slightly more likely.
+```
+
+*****
+
+```{r}
+#QUESTION3
+#Select the first 24 records in the dataset and look only at the response (INJURY) and the two predictors WEATHER_R and TRAF_CON_R. 
+##Create a pivot table that examines INJURY as a function of the two predictors for these 12 records. 
+##Use all three variables in the pivot table as rows/columns.
+
+#CONVERTING THE VARIABLES TO CATEGORICAL TYPE
+# IDENTIFYING THE TARGET VARIABLE COLUMN INDEX (ASSUMING IT'S THE LAST COLUMN) 
+target_col_index <- dim(accidentsFull)[2]
+
+#CONVERTING ALL COLUMNS EXCEPT THE TARGRT VARIABLE TO FACTORS
+accidentsFull[, 1:(target_col_index - 1)] <- lapply(accidentsFull[, 1:(target_col_index - 1)], as.factor)
+
+#create a new subset with only the required records
+new.df <- accidentsFull[1:24, c('INJURY','WEATHER_R','TRAF_CON_R')] 
+new.df
+
+#CREATING A PIVOT TABLE THAT EXAMINES INJURY AS A FUCTION OF THE TWO PREDICTORS FOR THESE 12 RECORDS, AND USING ALL THREE VARAIBLES IN THE PIVOT TABLE AS ROWS/COLUMNS.
+
+rpivotTable::rpivotTable(new.df)
+```
+
+****
+
+```{r}
+#QUESTION3
+#COMPUTING THE BAYES CONDITIONAL PROBABLITIES OF AN INJURY (INJURY = Yes) GIVEN THE SIX POSSIBILE COMBINATIONS OF THE PREDITCTORS.
+
+#To find P(Injury=yes|WEATHER_R = 1, TRAF_CON_R =0):
+numerator1 <- 2/3 * 3/12
+denominator1 <- 3/12
+prob1 <- numerator1/denominator1
+
+#To find P(Injury=yes|WEATHER_R = 1, TRAF_CON_R =1):
+numerator2 <- 0 * 3/12
+denominator2 <- 1/12
+prob2 <- numerator2/denominator2
+
+#To find P(Injury=yes| WEATHER_R = 1, TRAF_CON_R =2):
+numerator3 <- 0 * 3/12
+denominator3 <- 1/12
+prob3 <- numerator3/denominator3
+
+#To find P(Injury=yes| WEATHER_R = 2, TRAF_CON_R =0):
+numerator4 <- 1/3 * 3/12
+denominator4 <- 6/12
+prob4 <- numerator4/denominator4
+
+#To find P(Injury=yes| WEATHER_R = 2, TRAF_CON_R =1):
+numerator5 <- 0 * 3/12
+denominator5 <- 1/12
+prob5 <- numerator5/denominator5
+
+#To find P(Injury=yes| WEATHER_R = 2, TRAF_CON_R =2):
+numerator6 <- 0 * 3/12
+denominator6 <- 0
+prob6 <- numerator6/denominator6
+a<-c(1,2,3,4,5,6)
+b<-c(prob1,prob2,prob3,prob4,prob5,prob6)
+prob.df<-data.frame(a,b)
+names(prob.df)<-c('Option #','Probability')
+prob.df %>% mutate_if(is.numeric, round, 3)
+
+#In the above 12 observations there is no observation with (Injury=yes, WEATHER_R = 2, TRAF_CON_R =2). The conditional probability here is undefined, since the denominator is zero. (NOTE)
+```
+*****
+
+```{r}
+#QUESTION4
+#CLASSIFYING THE 24 ACCIDENTS USING THESES PROBABLITIES AND CUTOFF OF 0.5
+
+#ADDING PROBABILITY RESULTS TO THE SUBSET 
+new.df.prob<-new.df
+head(new.df.prob)
+probability.injury <- c(0.667, 0.167, 0, 0, 0.667, 0.167, 0.167, 0.667, 0.167, 0.167, 0.167, 0)
+
+new.df.prob$PROB_INJURY <- rep(probability.injury, length.out = nrow(new.df.prob))
+
+#ADDING A COLUMN FOR INJURY PREDICTION BASED ON A CUTOFF OF 0.5.
+new.df.prob$PREDICT_PROB<-ifelse(new.df.prob$PROB_INJURY>.5,"yes","no")
+new.df.prob
+```
+
+```{r}
+#QUESTION5
+#COMPUTING MANUALLY THE NAIVE BAYES CONDITIONAL PROBABILITY OF AN INJURY GIVEN THE WEATHER_R =1 AND TRAF_CON_R =1.
+
+#To find P(Injury=yes| WEATHER_R = 1, TRAF_CON_R =1):
+#Probability of injury involved in accidents
+#=(proportion of WEATHER_R =1 when Injury = yes) 
+#*(proportion of TRAF_CON_R =1 when Injury = yes)
+#*(proportion of Injury = yes in all cases)
+man.prob <- 2/3 * 0/3 * 3/12
+man.prob
+
+```
+
+```{r}
+#QUESTION6
+#RUNNING A NAIVE BAYES CLASSIFIER ON THE 24 RECORDS AND TWO PREDICTORS.
+#NOW,WE HAVE TO CHECK THE MODEL OUTPUT TO OBTAIN PROBABILITIES AND CLASSIFCATIONS FOR ALL 24 RECORDS.
+##AND THEN, WE ARE COMPARING TO BAYES CLASSIFCATION TO SEE IF THE RESULTING CLASSIFICATIONS ARE EQUIVALENT OR NOT.
+
+## AND TO CHECK IF THE RANKING (= ordering) OBSERVATIONS EQUIVALENT
+#LOADIND THE PACKAGES AND RUNNING NAIVE BAYES CLASSIFIER
+library(e1071)
+library(klaR)
+library(caret)
+nb<-naiveBayes(INJURY ~ ., data = new.df)
+predict(nb, newdata = new.df,type = "raw")
+
+#CHECKING THE MODEL WITH CARET PACKAGE USING THE TRAINING AND PREDICTING FUNCTIONS.
+library(caret)
+x=new.df[,-3]
+y=new.df$INJURY
+model <- train(x,y,'nb', trControl = trainControl(method = 'cv',number=10))
+model     
+
+##NOW THAT WE HAVE GENERATED THE CLASSIFICATION MODEL, WE CAN USE IT FOR PREDICTION.
+model.pred<-predict(model$finalModel,x)
+model.pred
+
+##BUILDING A CONFUSION MATRIX SO THAT WE CAN VISUALIZE THE CLASSIFICATION ERRORS.
+table(model.pred$class,y)
+
+#COMPARING AGAINST MANUALLY GENERATED RESULTS
+new.df.prob$PREDICT_PROB_NB<-model.pred$class
+new.df.prob
+#As you can see, the trained data worked better than our hand-crunched calculations. But since we were using the same data we were testing, that's to be expected. It's not a good idea to keep using the same data you've trained on for testing purposes.
+```
+
+```{r}
+#QUESTION7
+#PARTITIONING THE DATA INTO 60% TRAINING AND 40% VALIDATION. 
+
+#Let us now return to the entire dataset.  
+set.seed(223)
+train.index <- sample(c(1:dim(accidentsFull)[1]), dim(accidentsFull)[1]*0.6)  
+train.df <- accidentsFull[train.index,]
+valid.df <- accidentsFull[-train.index,]
+```
+
+*****
+
+```{r}
+#QUESTION8
+#RUNNING A NAIVE BAYES CLASSIFIER ON THE COMPLETE TRAINING SET WITH THE RELAVANT PREDICTORS AND INJURY AS THE RESPONSE AND SHOWING THE CONFUSION MATRIX. 
+#DEFINING THE VARIABLES THAT ARE USED
+
+library(e1071)
+library(klaR)
+library(caret)
+vars <- c ("INJURY", "HOUR_I_R",  "ALIGN_I" ,"WRK_ZONE",  "WKDY_I_R",
+        "INT_HWY",  "LGTCON_I_R", "PROFIL_I_R", "SPD_LIM", "SUR_COND",
+       "TRAF_CON_R",   "TRAF_WAY",   "WEATHER_R")
+
+nbTotal <- naiveBayes(INJURY ~ ., data = train.df)
+#train.df$INJURY <- factor(train.df$INJURY)
+predicted<-predict(nbTotal,valid.df[,-25])
+confusionMatrix(as.factor(valid.df$INJURY),predicted)
+```
+
+
+```{r}
+#QUESTION9
+#OVERALL ERROR OF THE VALIDATION SET
+
+
+actual <- factor(valid.df$INJURY, levels = c("yes", "no"))
+predicted <- factor(predict(nbTotal, valid.df[, vars]), levels = c("yes", "no"))
+confusionMatrix(actual, predicted, positive = "yes")
+ver=1-.5354
+verp=scales::percent(ver,0.01)
+paste("Overall Error: ",verp)
+```
+
+
+#The reason why we don't get a 0 for no injury in an accident under a speed limit of 5 is because we can never know for sure that something isn't going to happen. But since it's so unlikely that you'll get hurt in a car crash at that speed, it's only natural that the probability is pretty close to zero.
+
+
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
